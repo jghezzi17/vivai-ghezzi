@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-brand-50 text-brand-950 font-sans;
+  }
+}
+
+  
+/* Calendar customizations */
+.calendar-custom .rbc-toolbar button {
+  @apply text-gray-700 border-gray-300 transition-colors;
+}
+
+.calendar-custom .rbc-toolbar button.rbc-active {
+  @apply bg-brand-50 text-brand-700 border-brand-200 outline-none;
+  box-shadow: none !important;
+}
+
+.calendar-custom .rbc-toolbar button:active,
+.calendar-custom .rbc-toolbar button:hover {
+  @apply bg-brand-50 text-brand-600 border-brand-200;
+}
+
+.calendar-custom .rbc-today {
+  @apply bg-brand-50;
+}
+
+.calendar-custom .rbc-event {
+  @apply shadow-sm py-1 px-2 text-xs font-semibold;
+}
+
+.calendar-custom .rbc-off-range-bg {
+  @apply bg-gray-50;
+}
+
+.calendar-custom .rbc-header {
+  @apply py-2 font-semibold text-gray-700 bg-gray-50 border-b border-gray-200 uppercase text-xs;
+}
+
+.calendar-custom .rbc-date-cell {
+  @apply p-2 font-medium;
+}
