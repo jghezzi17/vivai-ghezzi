@@ -1,163 +1,218 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Leaf, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle, User, CheckCircle, Shield } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [nome, setNome] = useState('');
+  const [cognome, setCognome] = useState('');
+  const [wantAdmin, setWantAdmin] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const navigate = useNavigate();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setMessage(null);
+
+    if (isSignUp && wantAdmin && adminPassword !== 'admin') {
+      setError("Password amministratore errata.");
+      setLoading(false);
+      return;
+    }
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const ruoloScelto = wantAdmin && adminPassword === 'admin' ? 'admin' : 'operaio';
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: { data: { nome, cognome, ruolo: ruoloScelto } },
         });
         if (error) throw error;
-        setMessage('Registrazione completata! Puoi effettuare il login.');
+        if (data?.user) {
+          await supabase
+            .from('usersvivai')
+            .update({ nome, cognome, ruolo: ruoloScelto })
+            .eq('id', data.user.id);
+        }
+        setShowSuccessPopup(true);
         setIsSignUp(false);
+        setPassword('');
+        setAdminPassword('');
+        setWantAdmin(false);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         navigate('/');
       }
     } catch (err: any) {
-      setError(err.message || 'Si è verificato un errore durante l\'autenticazione.');
+      setError(err.message || "Si è verificato un errore.");
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleAuthMode = () => {
+    setIsSignUp(!isSignUp);
+    setError(null);
+  };
+
+  const inputClass =
+    "w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 transition-all";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-50 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-brand-200 opacity-20 blur-3xl"></div>
-        <div className="absolute top-1/2 -right-24 w-72 h-72 rounded-full bg-brand-300 opacity-20 blur-3xl"></div>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50 relative overflow-hidden">
+      {/* Soft ambient blobs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-100/40 blur-[100px]" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-brand-200/30 blur-[120px]" />
       </div>
 
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-card-lg relative z-10 border border-brand-100">
-        <div className="text-center flex flex-col items-center">
-          <div className="bg-brand-100 p-3 rounded-full mb-4">
-            <Leaf className="h-10 w-10 text-brand-600" />
-          </div>
-          <h2 className="mt-2 text-3xl font-extrabold text-gray-900 tracking-tight">
-            Vivai Ghezzi
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {isSignUp ? 'Crea un nuovo account' : 'Accedi al tuo account'}
-          </p>
+      <div className="relative z-10 w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <img src="/logo.svg" alt="Vivai Ghezzi" className="h-24 w-auto" />
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleAuth}>
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                </div>
-                <div className="ml-3 text-sm text-red-700">{error}</div>
-              </div>
-            </div>
-          )}
-
-          {message && (
-            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <Leaf className="h-5 w-5 text-green-500" />
-                </div>
-                <div className="ml-3 text-sm text-green-700">{message}</div>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4 rounded-md shadow-sm">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
-                Indirizzo Email
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:z-10 sm:text-sm transition-all"
-                  placeholder="admin@vivaighezzi.it"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:z-10 sm:text-sm transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+          {/* Heading */}
+          <div className="mb-7">
+            <h1 className="text-xl font-bold text-gray-900">
+              {isSignUp ? 'Crea account' : 'Bentornato'}
+            </h1>
+            <p className="text-sm text-gray-400 mt-1">
+              {isSignUp ? 'Compila i campi per registrarti' : 'Accedi al pannello gestionale'}
+            </p>
           </div>
 
-          <div>
+          {/* Error */}
+          {error && (
+            <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl p-3.5">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleAuth} className="space-y-4">
+            {/* Name fields (signup only) */}
+            {isSignUp && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide" htmlFor="nome">Nome</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input id="nome" type="text" required value={nome} onChange={e => setNome(e.target.value)}
+                      className={inputClass} placeholder="Mario" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide" htmlFor="cognome">Cognome</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input id="cognome" type="text" required value={cognome} onChange={e => setCognome(e.target.value)}
+                      className={inputClass} placeholder="Rossi" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide" htmlFor="email">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input id="email" type="email" autoComplete="email" required value={email}
+                  onChange={e => setEmail(e.target.value)} className={inputClass} placeholder="mario@vivaighezzi.it" />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide" htmlFor="password">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input id="password" type="password" autoComplete={isSignUp ? "new-password" : "current-password"}
+                  required value={password} onChange={e => setPassword(e.target.value)}
+                  className={inputClass} placeholder="••••••••" />
+              </div>
+            </div>
+
+            {/* Admin toggle (signup only) */}
+            {isSignUp && (
+              <div className="pt-1 space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div
+                    onClick={() => setWantAdmin(!wantAdmin)}
+                    className={`w-9 h-5 rounded-full relative transition-colors duration-200 ${wantAdmin ? 'bg-brand-500' : 'bg-gray-200'}`}
+                  >
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${wantAdmin ? 'translate-x-4' : ''}`} />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Registrati come Amministratore</span>
+                </label>
+                {wantAdmin && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide" htmlFor="adminPassword">Password Admin</label>
+                    <div className="relative">
+                      <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-400" />
+                      <input id="adminPassword" type="password" required={wantAdmin} value={adminPassword}
+                        onChange={e => setAdminPassword(e.target.value)}
+                        className={`${inputClass} border-brand-200 bg-brand-50/30`}
+                        placeholder="Password sblocco admin" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-all shadow-md active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full mt-2 py-3.5 px-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                isSignUp ? 'Registrati' : 'Accedi'
-              )}
+              {loading
+                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : isSignUp ? 'Crea Account' : 'Accedi'}
+            </button>
+          </form>
+
+          {/* Toggle */}
+          <div className="mt-6 text-center">
+            <button onClick={toggleAuthMode} className="text-sm text-brand-600 hover:text-brand-700 font-semibold transition-colors">
+              {isSignUp ? 'Hai già un account? Accedi' : 'Nuovo utente? Registrati'}
             </button>
           </div>
-          
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm">
-              <button
-                type="button"
-                className="font-medium text-brand-600 hover:text-brand-500 transition-colors"
-                onClick={() => setIsSignUp(!isSignUp)}
-              >
-                {isSignUp ? 'Hai già un account? Accedi' : 'Nuovo utente? Registrati'}
-              </button>
-            </div>
-          </div>
-        </form>
+        </div>
       </div>
+
+      {/* Success popup */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/20 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm p-8 text-center">
+            <div className="w-14 h-14 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-5">
+              <CheckCircle className="w-7 h-7 text-brand-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Registrato con successo!</h3>
+            <p className="text-sm text-gray-400 mb-7">
+              Il tuo account è stato creato. Ora puoi effettuare il login.
+            </p>
+            <button
+              onClick={() => setShowSuccessPopup(false)}
+              className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl transition-all"
+            >
+              Vai al Login
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

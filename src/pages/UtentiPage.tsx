@@ -47,8 +47,7 @@ const UtentiPage: React.FC = () => {
 
   const roleConfig = {
     admin: { label: 'Admin', color: 'bg-purple-100 text-purple-800', icon: ShieldAlert },
-    maestro: { label: 'Maestro', color: 'bg-blue-100 text-blue-800', icon: ShieldCheck },
-    user: { label: 'Operaio', color: 'bg-gray-100 text-gray-800', icon: Shield },
+    operaio: { label: 'Operaio', color: 'bg-gray-100 text-gray-800', icon: Shield },
   };
 
   return (
@@ -98,8 +97,7 @@ const UtentiPage: React.FC = () => {
                           onChange={(e) => handleRoleChange(utente.id, e.target.value as UserRole)}
                           className="text-sm border border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 p-1"
                         >
-                          <option value="user">Operaio</option>
-                          <option value="maestro">Maestro</option>
+                          <option value="operaio">Operaio</option>
                           <option value="admin">Admin</option>
                         </select>
                       </td>
@@ -129,8 +127,7 @@ const UtentiPage: React.FC = () => {
                         onChange={(e) => handleRoleChange(utente.id, e.target.value as UserRole)}
                         className="text-xs border border-gray-300 rounded-md shadow-sm p-1 ml-2"
                       >
-                        <option value="user">Operaio</option>
-                        <option value="maestro">Maestro</option>
+                        <option value="operaio">Operaio</option>
                         <option value="admin">Admin</option>
                      </select>
                    </div>

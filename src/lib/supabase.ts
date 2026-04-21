@@ -10,7 +10,7 @@ if (!supabaseUrl || !supabaseKey) {
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Define User types based on our custom 'usersvivai' table
-export type UserRole = 'admin' | 'maestro' | 'user';
+export type UserRole = 'admin' | 'operaio';
 
 export interface UserProfile {
   id: string;

@@ -38,7 +38,7 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
   const fetchData = async () => {
     const [clientiRes, operaiRes, articoliRes] = await Promise.all([
       supabase.from('clienti').select('id, nome, cognome').order('cognome'),
-      supabase.from('usersvivai').select('id, nome, cognome, ruolo').in('ruolo', ['user', 'maestro']),
+      supabase.from('usersvivai').select('id, nome, cognome, email, ruolo').in('ruolo', ['operaio', 'admin']),
       supabase.from('articoli').select('id, nome, tipo, costo, aliquota_iva, unita_misura').order('nome'),
     ]);
 
@@ -207,24 +207,31 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
               {selectedOperai.map((op, idx) => (
                 <div key={idx} className="flex flex-col sm:flex-row gap-3 bg-white border border-gray-200 p-3 rounded-lg shadow-sm">
                   <div className="w-full sm:w-1/3">
-                    <select required value={op.operaio_id} onChange={e => updateOperaio(idx, 'operaio_id', e.target.value)} className="w-full p-2 border rounded-md text-sm text-gray-900">
+                    <select required value={op.operaio_id} onChange={e => updateOperaio(idx, 'operaio_id', e.target.value)} className="w-full p-2.5 border rounded-md text-sm text-gray-900 bg-white">
                       <option value="">Seleziona...</option>
-                      {operai.map(o => <option key={o.id} value={o.id}>{o.nome} {o.cognome} ({o.ruolo})</option>)}
+                      {operai.map(o => <option key={o.id} value={o.id}>{o.nome || o.cognome ? `${o.nome} ${o.cognome}` : o.email} ({o.ruolo})</option>)}
                     </select>
                   </div>
                   <div className="w-full sm:w-auto flex flex-1 gap-2 items-center">
-                    <div className="flex-1">
+                    <div className="flex-1 flex flex-col">
+                      <label className="text-[10px] text-gray-500 uppercase font-bold sm:hidden mb-1">Inizio</label>
                       <input required type="time" title="Inizio" value={op.ora_inizio} onChange={e => updateOperaio(idx, 'ora_inizio', e.target.value)} className="w-full p-2 border rounded-md text-sm" />
                     </div>
-                    <span className="text-gray-400">-</span>
-                    <div className="flex-1">
+                    <span className="text-gray-400 mt-4 sm:mt-0">-</span>
+                    <div className="flex-1 flex flex-col">
+                      <label className="text-[10px] text-gray-500 uppercase font-bold sm:hidden mb-1">Fine</label>
                       <input required type="time" title="Fine" value={op.ora_fine} onChange={e => updateOperaio(idx, 'ora_fine', e.target.value)} className="w-full p-2 border rounded-md text-sm" />
                     </div>
                   </div>
-                  <div className="w-full sm:w-32 flex items-center relative">
-                    <input type="number" title="Pausa (min)" placeholder="Pausa" value={op.pausa_minuti} onChange={e => updateOperaio(idx, 'pausa_minuti', Number(e.target.value))} className="w-full p-2 border rounded-md text-sm pr-10" />
-                    <span className="absolute right-8 text-xs text-gray-400 pointer-events-none">min</span>
-                    <button type="button" onClick={() => setSelectedOperai(selectedOperai.filter((_, i) => i !== idx))} className="ml-2 text-red-500 hover:text-red-700 p-1">
+                  <div className="w-full flex-col sm:flex-row sm:w-40 flex sm:items-center gap-2">
+                    <div className="flex-1 flex flex-col">
+                      <label className="text-[10px] text-gray-500 uppercase font-bold sm:hidden mb-1">Pausa</label>
+                      <div className="flex items-center border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-brand-500">
+                        <input type="number" title="Pausa (min)" placeholder="Pausa" value={op.pausa_minuti} onChange={e => updateOperaio(idx, 'pausa_minuti', Number(e.target.value))} className="w-full p-2 text-sm outline-none min-w-0" />
+                        <span className="px-2 text-xs text-gray-500 bg-gray-50 border-l">min</span>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setSelectedOperai(selectedOperai.filter((_, i) => i !== idx))} className="text-red-500 hover:text-red-700 p-2 sm:p-1 self-end sm:self-auto bg-red-50 sm:bg-transparent rounded-lg sm:rounded-none flex justify-center items-center">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
@@ -252,15 +259,20 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
                 return (
                 <div key={idx} className="flex flex-col sm:flex-row gap-3 bg-white border border-gray-200 p-3 rounded-lg shadow-sm">
                   <div className="flex-1">
-                    <select required value={art.articolo_id} onChange={e => updateArticolo(idx, 'articolo_id', e.target.value)} className="w-full p-2 border rounded-md text-sm">
-                      <option value="">Seleziona...</option>
+                    <select required value={art.articolo_id} onChange={e => updateArticolo(idx, 'articolo_id', e.target.value)} className="w-full p-2.5 border rounded-md text-sm bg-white">
+                      <option value="">Seleziona articolo...</option>
                       {articoli.map(a => <option key={a.id} value={a.id}>{a.nome} - ({a.tipo})</option>)}
                     </select>
                   </div>
-                  <div className="w-full sm:w-48 flex items-center relative">
-                    <input required type="number" step="0.01" min="0.01" title="Quantità" placeholder="Quantità" value={art.quantita_usata} onChange={e => updateArticolo(idx, 'quantita_usata', Number(e.target.value))} className="w-full p-2 border rounded-md text-sm pr-10" />
-                    <span className="absolute right-8 text-xs text-gray-400 pointer-events-none">{selectedDbArt?.unita_misura || 'qty'}</span>
-                    <button type="button" onClick={() => setSelectedArticoli(selectedArticoli.filter((_, i) => i !== idx))} className="ml-2 text-red-500 hover:text-red-700 p-1">
+                  <div className="w-full flex-col sm:flex-row sm:w-64 flex sm:items-center gap-2 mt-2 sm:mt-0">
+                    <div className="flex-1 flex flex-col">
+                      <label className="text-[10px] text-gray-500 uppercase font-bold sm:hidden mb-1">Quantità</label>
+                      <div className="flex items-center border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-brand-500">
+                        <input required type="number" step="0.01" min="0.01" title="Quantità" placeholder="Quantità" value={art.quantita_usata} onChange={e => updateArticolo(idx, 'quantita_usata', Number(e.target.value))} className="w-full p-2.5 text-sm outline-none min-w-0" />
+                        <span className="px-3 text-xs text-gray-500 bg-gray-50 border-l font-medium whitespace-nowrap">{selectedDbArt?.unita_misura || 'qty'}</span>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setSelectedArticoli(selectedArticoli.filter((_, i) => i !== idx))} className="text-red-500 hover:text-red-700 p-2 sm:p-1 self-end sm:self-auto bg-red-50 sm:bg-transparent rounded-lg sm:rounded-none flex justify-center items-center">
                       <X className="w-5 h-5" />
                     </button>
                   </div>

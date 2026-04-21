@@ -7,7 +7,7 @@ create table public.usersvivai (
   email text not null,
   nome text,
   cognome text,
-  ruolo text check (ruolo in ('admin', 'maestro', 'user')) default 'user',
+  ruolo text check (ruolo in ('admin', 'operaio')) default 'operaio',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 -- Ensure Row Level Security (RLS) is enabled but allow all for now for ease of dev
@@ -82,7 +82,7 @@ create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.usersvivai (id, email, nome, cognome, ruolo)
-  values (new.id, new.email, '', '', 'user');
+  values (new.id, new.email, '', '', 'operaio');
   return new;
 end;
 $$ language plpgsql security definer;

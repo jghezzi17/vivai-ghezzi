@@ -10,6 +10,7 @@ import CalendarioPage from './pages/CalendarioPage';
 import ClientiPage from './pages/ClientiPage';
 import ArticoliPage from './pages/ArticoliPage';
 import UtentiPage from './pages/UtentiPage';
+import InterventiPage from './pages/InterventiPage';
 
 // Protected route wrapper
 const ProtectedRoute = () => {
@@ -42,6 +43,7 @@ function App() {
               <Route path="/clienti" element={<ClientiPage />} />
               <Route path="/articoli" element={<ArticoliPage />} />
               <Route path="/utenti" element={<UtentiPage />} />
+              <Route path="/interventi" element={<InterventiPage />} />
             </Route>
           </Route>
         </Routes>
