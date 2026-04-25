@@ -4,7 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import {
   Plus, Search, Filter, Euro, User, Calendar,
-  ChevronRight, RefreshCw, FileText
+  ChevronRight, RefreshCw, FileText, Trash2
 } from 'lucide-react';
 import InterventoModal from '../components/InterventoModal';
 import InterventoDetailModal from '../components/InterventoDetailModal';
@@ -42,6 +42,17 @@ const InterventiPage: React.FC = () => {
       setInterventi(data);
     }
     setLoading(false);
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (window.confirm('Sei sicuro di voler eliminare questo intervento?')) {
+      setLoading(true);
+      await supabase.from('intervento_operai').delete().eq('intervento_id', id);
+      await supabase.from('intervento_articoli').delete().eq('intervento_id', id);
+      await supabase.from('interventi').delete().eq('id', id);
+      fetchInterventi();
+    }
   };
 
   const filtered = interventi.filter(int => {
@@ -228,8 +239,17 @@ const InterventiPage: React.FC = () => {
                           €{Number(int.costo_totale || 0).toFixed(2)}
                         </span>
                       </td>
-                      <td className="px-4 py-4">
-                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-brand-500 transition" />
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex items-center justify-end gap-3">
+                          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-brand-500 transition" />
+                          <button 
+                            onClick={(e) => handleDelete(e, int.id)} 
+                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                            title="Elimina intervento"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -273,6 +293,12 @@ const InterventiPage: React.FC = () => {
                   </div>
                   <div className="shrink-0 flex items-center gap-2">
                     <span className="font-black text-green-700 text-sm">€{Number(int.costo_totale || 0).toFixed(0)}</span>
+                    <button 
+                      onClick={(e) => handleDelete(e, int.id)} 
+                      className="p-1.5 ml-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                     <ChevronRight className="w-4 h-4 text-gray-300" />
                   </div>
                 </div>

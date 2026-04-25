@@ -78,7 +78,7 @@ const LoginPage: React.FC = () => {
       <div className="relative z-10 w-full max-w-sm">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <img src="/logo.svg" alt="Vivai Ghezzi" className="h-24 w-auto" />
+          <img src="/logo.png" alt="Vivai Ghezzi" className="h-24 w-auto object-contain" />
         </div>
 
         {/* Card */}

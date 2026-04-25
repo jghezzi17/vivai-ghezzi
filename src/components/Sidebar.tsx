@@ -22,8 +22,8 @@ const Sidebar: React.FC = () => {
     <div className="h-full flex flex-col w-72 bg-white border-r border-gray-100 shadow-smooth">
       {/* Branding Section */}
       <div className="p-8 pb-6">
-        <div className="transition-transform hover:scale-[1.02] duration-300">
-           <img src="/logo.svg" alt="Vivai Ghezzi" className="h-20 w-auto" />
+        <div className="transition-transform hover:scale-[1.02] duration-300 flex justify-center">
+           <img src="/logo.png" alt="Vivai Ghezzi" className="h-20 w-auto object-contain" />
         </div>
       </div>
 

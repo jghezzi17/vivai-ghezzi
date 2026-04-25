@@ -1,0 +1,11 @@
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS cod_cliente text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS regione text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS fax text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS sconti text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS listino text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS fido text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS agente text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS pagamento text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS banca text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS ns_banca text;
+ALTER TABLE public.clienti ADD COLUMN IF NOT EXISTS note text;

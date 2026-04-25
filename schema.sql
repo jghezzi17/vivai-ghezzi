@@ -17,13 +17,22 @@ create policy "Allow all operations for authenticated users" on public.usersviva
 -- 2. Create Clienti Table
 create table public.clienti (
   id uuid default uuid_generate_v4() primary key,
-  nome text not null,
+  nome text,
   cognome text not null,
   codice_fiscale text,
   partita_iva text,
   email text,
   telefono text,
+  cellulare text,
   indirizzo text,
+  cap text,
+  citta text,
+  provincia text,
+  nazione text,
+  pec text,
+  codice_destinatario text,
+  referente text,
+  extra text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 alter table public.clienti enable row level security;
