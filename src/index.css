@@ -10,6 +10,11 @@
   }
 }
 
+/* Hide mobile nav when a modal is open */
+body[data-modal-open] .mobile-nav-container {
+  display: none !important;
+}
+
 /* Smooth Calendar Customizations */
 .calendar-custom .rbc-toolbar button {
   @apply text-gray-500 border border-gray-100 px-4 py-2 rounded-xl transition-all duration-200 font-bold text-sm;

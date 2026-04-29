@@ -10,26 +10,25 @@ const MobileNav: React.FC = () => {
     { name: 'Dashboard', path: '/', icon: Home },
     { name: 'Calendario', path: '/calendario', icon: Calendar },
     { name: 'Interventi', path: '/interventi', icon: ClipboardList },
-    { name: 'Clienti', path: '/clienti', icon: Users },
-    { name: 'Articoli', path: '/articoli', icon: Package },
   ];
 
   if (isAdmin) {
-    navItems.push({ name: 'Utenti', path: '/utenti', icon: UserCog });
+    navItems.push(
+      { name: 'Clienti', path: '/clienti', icon: Users },
+      { name: 'Articoli', path: '/articoli', icon: Package },
+      { name: 'Utenti', path: '/utenti', icon: UserCog }
+    );
   }
-
-  // Adjust width based on number of items (4 for normal, 5 for admin)
-  const itemWidth = isAdmin ? 'w-1/5' : 'w-1/4';
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-      <div className="flex justify-between items-center h-16">
+      <div className="flex justify-between items-center h-16 px-1">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center h-full space-y-1 transition-colors ${itemWidth} ${
+              `flex-1 flex flex-col items-center justify-center h-full space-y-1 transition-colors ${
                 isActive
                   ? 'text-brand-600'
                   : 'text-gray-500 hover:text-gray-900'

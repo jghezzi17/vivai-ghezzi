@@ -47,7 +47,7 @@ const Layout: React.FC = () => {
         </main>
 
         {/* Mobile Bottom Navigation */}
-        <div className="md:hidden">
+        <div className="md:hidden mobile-nav-container">
           <MobileNav />
         </div>
       </div>

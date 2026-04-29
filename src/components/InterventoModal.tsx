@@ -40,6 +40,9 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
   const [selectedOperai, setSelectedOperai] = useState<any[]>([]);
   const [selectedArticoli, setSelectedArticoli] = useState<any[]>([]);
 
+  // UX State
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   // Searchable Select State
   const [clientSearch, setClientSearch] = useState('');
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
@@ -73,6 +76,8 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
 
   useEffect(() => {
     if (isOpen) {
+      document.body.setAttribute('data-modal-open', 'true');
+      document.body.style.overflow = 'hidden';
       setData(format(initialDate, 'yyyy-MM-dd'));
       fetchData();
       // Reset form
@@ -82,7 +87,14 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
       setSelectedArticoli([]);
       setClientSearch('');
       setIsClientDropdownOpen(false);
+    } else {
+      document.body.removeAttribute('data-modal-open');
+      document.body.style.overflow = '';
     }
+    return () => {
+      document.body.removeAttribute('data-modal-open');
+      document.body.style.overflow = '';
+    };
   }, [isOpen, initialDate]);
 
   const fetchData = async () => {
@@ -115,11 +127,14 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
       }
     });
 
-    // Material cost (cost + IVA)
+    // Material cost (cost + IVA) — respects per-intervention price overrides
     selectedArticoli.forEach(art => {
       let costWithIva = 0;
       if (art.actionType === 'create_new' || art.actionType === 'update_existing') {
         costWithIva = Number(art.custom_costo || 0) * (1 + Number(art.custom_aliquota_iva || 0)/100);
+      } else if (art.actionType === 'price_override') {
+        // Use override values stored locally
+        costWithIva = Number(art.override_costo || 0) * (1 + Number(art.override_iva || 0)/100);
       } else {
         const dbArt = articoli.find(a => a.id === art.articolo_id);
         if (dbArt && art.quantita_usata) {
@@ -156,7 +171,8 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
             tipo: art.custom_tipo,
             costo: art.custom_costo,
             unita_misura: art.custom_unita_misura,
-            aliquota_iva: art.custom_aliquota_iva
+            aliquota_iva: art.custom_aliquota_iva,
+            quantita: 0  // required column, default to 0
           }]).select().single();
           if (error) throw error;
           art.articolo_id = data.id;
@@ -175,7 +191,7 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
       // 1. Insert Intervento
       const { data: intData, error: intError } = await supabase
         .from('interventi')
-        .insert([{ cliente_id: clienteId, data, note, costo_totale: costoTotale }])
+        .insert([{ cliente_id: clienteId || null, data, note, costo_totale: costoTotale }])
         .select()
         .single();
       
@@ -195,21 +211,26 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
         if (error) throw error;
       }
 
-      // 3. Insert Articoli
-      const artInserts = resolvedArticoli.map(art => ({
-        intervento_id: interventoId,
-        articolo_id: art.articolo_id,
-        quantita_usata: art.quantita_usata
-      }));
+      // 3. Insert Articoli — skip rows with no valid articolo_id
+      const artInserts = resolvedArticoli
+        .filter(art => art.articolo_id && art.articolo_id !== '')
+        .map(art => ({
+          intervento_id: interventoId,
+          articolo_id: art.articolo_id,
+          quantita_usata: Number(art.quantita_usata) || 1,
+          // Store price override if user customised it for this intervention
+          costo_override: art.actionType === 'price_override' ? Number(art.override_costo) : null,
+          aliquota_iva_override: art.actionType === 'price_override' ? Number(art.override_iva) : null,
+        }));
       if (artInserts.length > 0) {
         const { error } = await supabase.from('intervento_articoli').insert(artInserts);
         if (error) throw error;
       }
 
       onClose(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Errore durante il salvataggio');
+      setErrorMsg(`Errore durante il salvataggio: ${error.message || 'Riprova più tardi'}`);
     } finally {
       setLoading(false);
     }
@@ -233,13 +254,18 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
       articolo_id: '', 
       quantita_usata: 1,
       actionType: 'none',
+      // custom fields (create_new / update_existing)
       custom_nome: '',
       custom_tipo: 'materiale',
       custom_costo: 0,
       custom_unita_misura: 'pz',
       custom_aliquota_iva: 22,
       similarItem: null,
-      isConfirmed: false
+      isConfirmed: false,
+      // price override fields (price_override)
+      override_costo: 0,
+      override_iva: 22,
+      showOverrideForm: false,
     }]);
   };
 
@@ -283,6 +309,9 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
       updateArticolo(idx, 'articolo_id', exactMatch.id);
       updateArticolo(idx, 'actionType', 'none');
       updateArticolo(idx, 'custom_unita_misura', exactMatch.unita_misura);
+      // Pre-populate override fields from catalog
+      updateArticolo(idx, 'override_costo', exactMatch.costo);
+      updateArticolo(idx, 'override_iva', exactMatch.aliquota_iva);
       updateArticolo(idx, 'isMenuOpen', false);
       return;
     }
@@ -334,12 +363,12 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-6">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col outline-none overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-gray-900/40 backdrop-blur-sm transition-opacity" style={{ height: '100dvh' }}>
+      <div className="bg-white w-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl shadow-2xl sm:max-w-4xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" style={{ height: '100dvh' }}>
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center">
+        <div className="flex-none flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
             <Clock className="w-5 h-5 mr-2 text-brand-600" />
             Nuovo Intervento
           </h2>
@@ -349,10 +378,23 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
         </div>
         
         {/* Scrollable Content */}
-        <form onSubmit={handleSave} className="overflow-y-auto flex-1 p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6 space-y-6">
           
+          {errorMsg && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start space-x-3 text-red-700">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-sm">Errore</p>
+                <p className="text-sm mt-1">{errorMsg}</p>
+              </div>
+              <button onClick={() => setErrorMsg(null)} className="p-1 hover:bg-red-100 rounded-lg transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* General Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
              <div ref={clientDropdownRef} className="relative flex flex-col">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
                 <div 
@@ -434,7 +476,7 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
             </div>
             
             <div className="space-y-3">
-              {selectedOperai.length === 0 && <p className="text-sm text-gray-500 italic p-4 text-center bg-gray-50 rounded-lg border border-dashed">Nessun operaio assegnato. Clicca su "Aggiungi Operaio".</p>}
+              {selectedOperai.length === 0 && <p className="text-sm text-gray-500 italic p-4 text-center bg-white rounded-lg border border-dashed">Nessun operaio assegnato.</p>}
               {selectedOperai.map((op, idx) => (
                 <div key={idx} className="flex flex-col sm:flex-row gap-3 bg-white border border-gray-200 p-3 rounded-lg shadow-sm">
                   <div className="w-full sm:w-1/3">
@@ -489,22 +531,18 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
             </div>
             
             <div className="space-y-4">
-              {selectedArticoli.length === 0 && <p className="text-sm text-gray-500 italic p-4 text-center bg-gray-50 rounded-lg border border-dashed">Nessun materiale/macchinario selezionato.</p>}
+              {selectedArticoli.length === 0 && <p className="text-sm text-gray-500 italic p-4 text-center bg-white rounded-lg border border-dashed">Nessun materiale/macchinario selezionato.</p>}
               
               {selectedArticoli.map((art, idx) => {
                 const selectedDbArt = articoli.find(a => a.id === art.articolo_id);
-                // calcolo udm e filtered options
                 const udmDisplayed = (art.actionType === 'create_new' || art.actionType === 'update_existing') ? art.custom_unita_misura : (selectedDbArt?.unita_misura || 'qty');
-                
                 const filteredArticoli = art.searchText ? articoli.filter(a => a.nome.toLowerCase().includes(art.searchText.toLowerCase())) : articoli;
 
                 return (
                   <div key={art.localId || idx} className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm space-y-3 relative overflow-visible">
                     
-                    {/* Top Row: Select / Input + Qty */}
                     <div className="flex flex-col sm:flex-row gap-3">
                       
-                      {/* Search / Select Container */}
                       <div className="flex-1 relative flex items-center">
                         {art.isConfirmed && (art.actionType === 'create_new' || art.actionType === 'update_existing') ? (
                            <div className="w-full text-sm bg-brand-50 border border-brand-200 p-2.5 rounded-lg flex justify-between items-center shadow-sm">
@@ -513,6 +551,17 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
                                <span className="font-normal text-brand-700 ml-1 text-xs">({art.custom_tipo}) • €{art.custom_costo}</span>
                              </div>
                              <button type="button" onClick={() => updateArticolo(idx, 'isConfirmed', false)} className="text-brand-600 hover:text-brand-800 ml-2 p-1 bg-white rounded-md border border-brand-100"><Edit3 className="w-4 h-4" /></button>
+                           </div>
+                        ) : art.actionType === 'price_override' ? (
+                           <div className="w-full text-sm bg-blue-50 border border-blue-200 p-2.5 rounded-lg flex justify-between items-center shadow-sm">
+                             <div className="font-semibold text-blue-900 truncate">
+                               {selectedDbArt?.nome}
+                               <span className="font-normal text-blue-600 ml-1 text-xs">Prezzo personalizzato • €{art.override_costo} (+{art.override_iva}% IVA)</span>
+                             </div>
+                             <div className="flex items-center gap-1 ml-2 shrink-0">
+                               <button type="button" onClick={() => updateArticolo(idx, 'showOverrideForm', !art.showOverrideForm)} className="text-blue-600 hover:text-blue-800 p-1 bg-white rounded-md border border-blue-100"><Edit3 className="w-4 h-4" /></button>
+                               <button type="button" onClick={() => { updateArticolo(idx, 'actionType', 'none'); updateArticolo(idx, 'showOverrideForm', false); }} className="text-gray-400 hover:text-gray-600 p-1 bg-white rounded-md border border-gray-100" title="Usa prezzo catalogo"><X className="w-3.5 h-3.5" /></button>
+                             </div>
                            </div>
                         ) : art.actionType !== 'none' ? (
                            <div className="w-full text-sm font-semibold text-gray-700 bg-gray-100 p-2.5 border border-gray-200 rounded-lg shadow-inner">
@@ -523,10 +572,26 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
                              className="w-full p-2.5 border rounded-lg bg-gray-50 cursor-text flex items-center justify-between"
                              onClick={() => updateArticolo(idx, 'isMenuOpen', true)}
                            >
-                             <span className="text-sm font-medium text-gray-800">
-                               {selectedDbArt ? `${selectedDbArt.nome} (${selectedDbArt.tipo})` : 'Cerca o inserisci...'}
-                             </span>
-                             <Search className="w-4 h-4 text-gray-400" />
+                             <div className="flex flex-col min-w-0">
+                               <span className="text-sm font-medium text-gray-800 truncate">
+                                 {selectedDbArt ? selectedDbArt.nome : 'Cerca o inserisci...'}
+                               </span>
+                               {selectedDbArt && (
+                                 <span className="text-[10px] text-gray-500 mt-0.5">{selectedDbArt.tipo} • €{selectedDbArt.costo} +{selectedDbArt.aliquota_iva}% IVA</span>
+                               )}
+                             </div>
+                             <div className="flex items-center gap-2 ml-2 shrink-0">
+                               {selectedDbArt && (
+                                 <button
+                                   type="button"
+                                   onClick={e => { e.stopPropagation(); updateArticolo(idx, 'override_costo', selectedDbArt.costo); updateArticolo(idx, 'override_iva', selectedDbArt.aliquota_iva); updateArticolo(idx, 'actionType', 'price_override'); updateArticolo(idx, 'showOverrideForm', true); }}
+                                   className="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-1 rounded-md transition whitespace-nowrap"
+                                 >
+                                   Modifica prezzi
+                                 </button>
+                               )}
+                               <Search className="w-4 h-4 text-gray-400" />
+                             </div>
                            </div>
                         ) : (
                            <div id={`article-dropdown-${art.localId}`} className="w-full relative">
@@ -540,7 +605,7 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
                                   onChange={(e) => {
                                     updateArticolo(idx, 'searchText', e.target.value);
                                     updateArticolo(idx, 'isMenuOpen', true);
-                                    updateArticolo(idx, 'actionType', 'none'); // reset custom flow if they type
+                                    updateArticolo(idx, 'actionType', 'none');
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
@@ -553,7 +618,6 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
                                 <button type="button" onClick={() => checkArticleSearch(idx)} className="text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 text-xs font-semibold rounded-md mx-1 transition-colors">OK</button>
                              </div>
 
-                             {/* Dropdown Options */}
                              {art.isMenuOpen && (
                                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 shadow-xl rounded-lg max-h-48 overflow-y-auto z-50 py-1">
                                  {filteredArticoli.map(a => (
@@ -565,6 +629,8 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
                                        updateArticolo(idx, 'searchText', a.nome);
                                        updateArticolo(idx, 'actionType', 'none');
                                        updateArticolo(idx, 'isMenuOpen', false);
+                                       updateArticolo(idx, 'override_costo', a.costo);
+                                       updateArticolo(idx, 'override_iva', a.aliquota_iva);
                                      }}
                                      className="px-4 py-2 hover:bg-brand-50 cursor-pointer border-b border-gray-50 last:border-0"
                                    >
@@ -587,12 +653,11 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
                         )}
                       </div>
 
-                      {/* Qty & Remove */}
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <div className="flex-1 sm:w-32 flex flex-col">
                           <label className="text-[10px] text-gray-500 uppercase font-bold sm:hidden mb-1">Q.tà</label>
                           <div className="flex items-center border rounded-md overflow-hidden bg-gray-50 text-sm">
-                            <input type="number" step="0.01" min="0.01" value={art.quantita_usata} onChange={e => updateArticolo(idx, 'quantita_usata', Number(e.target.value))} className="w-full p-2.5 outline-none min-w-0 bg-transparent text-right" />
+                            <input type="number" step="0.5" min="0" value={art.quantita_usata} onChange={e => updateArticolo(idx, 'quantita_usata', Number(e.target.value))} className="w-full p-2.5 outline-none min-w-0 bg-transparent text-right" />
                             <span className="px-3 border-l font-medium text-gray-600 bg-gray-100 whitespace-nowrap">{udmDisplayed}</span>
                           </div>
                         </div>
@@ -603,7 +668,59 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
 
                     </div>
 
-                    {/* Conflict Resolution Block */}
+                    {/* Price Override Form */}
+                    {(art.actionType === 'price_override') && art.showOverrideForm && (
+                      <div className="bg-blue-50/70 border border-blue-200 rounded-lg p-4 animate-in fade-in slide-in-from-top-1">
+                        <div className="flex items-center text-blue-800 font-bold mb-3 text-sm">
+                          <Edit3 className="w-4 h-4 mr-1.5" />
+                          Prezzi personalizzati per questo intervento
+                          <span className="ml-1 text-blue-500 font-normal text-xs">(il catalogo non verrà modificato)</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Costo Base (€)</label>
+                            <input
+                              type="number" step="0.01" min="0"
+                              value={art.override_costo}
+                              onChange={e => updateArticolo(idx, 'override_costo', Number(e.target.value))}
+                              className="w-full p-2 border border-blue-200 rounded-md outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            />
+                            <p className="text-[10px] text-gray-400 mt-0.5">Catalogo: €{selectedDbArt?.costo}</p>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1">IVA (%)</label>
+                            <select
+                              value={art.override_iva}
+                              onChange={e => updateArticolo(idx, 'override_iva', Number(e.target.value))}
+                              className="w-full p-2 border border-blue-200 rounded-md outline-none bg-white"
+                            >
+                              <option value={22}>22%</option>
+                              <option value={10}>10%</option>
+                              <option value={4}>4%</option>
+                              <option value={0}>0%</option>
+                            </select>
+                            <p className="text-[10px] text-gray-400 mt-0.5">Catalogo: {selectedDbArt?.aliquota_iva}%</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex justify-between items-center">
+                          <button
+                            type="button"
+                            onClick={() => { updateArticolo(idx, 'actionType', 'none'); updateArticolo(idx, 'showOverrideForm', false); }}
+                            className="text-xs text-gray-500 hover:text-gray-700 underline"
+                          >
+                            Usa prezzo catalogo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateArticolo(idx, 'showOverrideForm', false)}
+                            className="px-4 py-1.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 text-sm transition shadow-sm"
+                          >
+                            Conferma prezzi
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {art.actionType === 'conflict_warning' && (
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm animate-in fade-in slide-in-from-top-1">
                         <div className="flex items-center text-amber-800 font-bold mb-2">
@@ -621,7 +738,6 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
                       </div>
                     )}
 
-                    {/* Extended Inline Form for Creation or Update */}
                     {(art.actionType === 'create_new' || art.actionType === 'update_existing') && !art.isConfirmed && (
                       <div className="bg-brand-50/50 border border-brand-100 rounded-lg p-4 animate-in fade-in slide-in-from-top-1">
                         <div className="flex items-center text-brand-800 font-bold mb-3 text-sm">
@@ -671,8 +787,6 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
                         </div>
                       </div>
                     )}
-
-
                   </div>
                 )
               })}
@@ -685,22 +799,37 @@ const InterventoModal: React.FC<InterventoModalProps> = ({ isOpen, onClose, init
             <textarea rows={3} value={note} onChange={e => setNote(e.target.value)} className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-brand-500 shadow-sm" placeholder="Dettagli, lavorazioni effettuate, etc..."></textarea>
           </div>
 
-        </form>
+        </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 shrink-0 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-xl font-bold text-gray-900 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
-            Costo Stimato: <span className="text-brand-600">€ {calculateTotalCost()}</span>
+        <div className="flex-none p-4 sm:p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+          <div className="text-right w-full sm:w-auto order-1 sm:order-none">
+            <p className="text-sm text-gray-500 font-medium mb-0.5">Costo Totale Stimato</p>
+            <p className="text-2xl sm:text-3xl font-black text-brand-600 tracking-tight">€{calculateTotalCost()}</p>
           </div>
-          <div className="flex space-x-3 w-full sm:w-auto">
-            <button type="button" onClick={() => onClose(false)} className="flex-1 sm:flex-none px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-white bg-transparent font-medium transition">
+          <div className="flex space-x-3 w-full sm:w-auto order-2 sm:order-none">
+            <button
+              type="button"
+              onClick={() => onClose(false)}
+              className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 border-2 border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all focus:outline-none"
+            >
               Annulla
             </button>
-            <button onClick={handleSave} disabled={loading} className="flex-1 sm:flex-none flex items-center justify-center px-6 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 font-medium shadow-sm transition disabled:opacity-70">
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 focus:outline-none"
+            >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Salvataggio...</span>
+                </>
               ) : (
-                <><Save className="w-5 h-5 mr-2" /> Salva Intervento</>
+                <>
+                  <Save className="w-5 h-5" />
+                  <span>Salva Intervento</span>
+                </>
               )}
             </button>
           </div>
