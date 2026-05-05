@@ -8,8 +8,10 @@ import {
 } from 'lucide-react';
 import InterventoModal from '../components/InterventoModal';
 import InterventoDetailModal from '../components/InterventoDetailModal';
+import { useAuth } from '../contexts/AuthContext';
 
 const InterventiPage: React.FC = () => {
+  const { isAdmin } = useAuth();
   const [interventi, setInterventi] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,12 +120,12 @@ const InterventiPage: React.FC = () => {
             color: 'text-blue-700',
             bg: 'bg-blue-50',
           },
-          {
+          ...(isAdmin ? [{
             label: 'Fatturato filtrato',
             value: `€${totalCost.toFixed(0)}`,
             color: 'text-green-700',
             bg: 'bg-green-50',
-          },
+          }] : []),
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-2xl border border-gray-100 p-4 shadow-sm`}>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{s.label}</p>

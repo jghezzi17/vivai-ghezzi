@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Users, Package, Calendar, AlertCircle, TrendingUp, BarChart3, Euro, Clock, Trophy } from 'lucide-react';
-import { format, subDays, subMonths, subYears } from 'date-fns';
+import { Users, Calendar, AlertCircle, TrendingUp, BarChart3, Euro, Clock, Trophy, ArrowRight } from 'lucide-react';
+import { format, subDays, subMonths, subYears, parseISO } from 'date-fns';
+import { it as itLocale } from 'date-fns/locale';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,7 +13,6 @@ type PeriodKey = 'settimana' | 'mese' | 'trimestre' | 'anno';
 interface BasicStats {
   utentiTotali: number;
   clientiTotali: number;
-  articoliTotali: number;
   interventiOggi: number;
 }
 
@@ -68,10 +68,10 @@ const DashboardPage: React.FC = () => {
   const [basicStats, setBasicStats] = useState<BasicStats>({
     utentiTotali: 0,
     clientiTotali: 0,
-    articoliTotali: 0,
     interventiOggi: 0,
   });
   const [loadingBasic, setLoadingBasic] = useState(true);
+  const [nextIntervento, setNextIntervento] = useState<any | null>(null);
 
   const [period, setPeriod] = useState<PeriodKey>('mese');
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
@@ -82,17 +82,26 @@ const DashboardPage: React.FC = () => {
     const fetchBasic = async () => {
       setLoadingBasic(true);
       try {
-        const [{ count: uCount }, { count: cCount }, { count: aCount }, { count: iCount }] = await Promise.all([
+        const [{ count: uCount }, { count: cCount }, { count: iCount }] = await Promise.all([
           supabase.from('usersvivai').select('*', { count: 'exact', head: true }),
           supabase.from('clienti').select('*', { count: 'exact', head: true }),
-          supabase.from('articoli').select('*', { count: 'exact', head: true }),
           supabase.from('interventi').select('*', { count: 'exact', head: true }).eq('data', new Date().toISOString().split('T')[0]),
         ]);
+
+        const nowStr = new Date().toISOString().split('T')[0];
+        const { data: nextData } = await supabase
+          .from('interventi')
+          .select('id, data, note, cliente_snapshot, clienti(nome, cognome)')
+          .gte('data', nowStr)
+          .order('data', { ascending: true })
+          .limit(1)
+          .single();
+          
+        if (nextData) setNextIntervento(nextData);
 
         setBasicStats({
           utentiTotali: uCount || 0,
           clientiTotali: cCount || 0,
-          articoliTotali: aCount || 0,
           interventiOggi: iCount || 0,
         });
       } catch (error) {
@@ -167,7 +176,6 @@ const DashboardPage: React.FC = () => {
   const basicCards = [
     { title: 'Interventi Oggi',       value: basicStats.interventiOggi, icon: Calendar,  color: 'bg-orange-100 text-orange-600' },
     { title: 'Clienti Totali',        value: basicStats.clientiTotali,  icon: Users,     color: 'bg-blue-100 text-blue-600' },
-    { title: 'Articoli in Magazzino', value: basicStats.articoliTotali, icon: Package,   color: 'bg-purple-100 text-purple-600' },
     { title: 'Operai & Staff',        value: basicStats.utentiTotali,   icon: TrendingUp, color: 'bg-green-100 text-green-600' },
   ];
 
@@ -179,13 +187,13 @@ const DashboardPage: React.FC = () => {
 
       {/* ── Basic Stats ── */}
       {loadingBasic ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => (
             <div key={i} className="bg-white rounded-xl shadow-card p-6 animate-pulse h-32"></div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {basicCards.map((card, idx) => (
             <div key={idx} className="bg-white rounded-xl shadow-card p-6 flex items-center space-x-4 border border-gray-100 transition-transform hover:scale-[1.02]">
               <div className={`p-4 rounded-full ${card.color}`}>
@@ -288,13 +296,47 @@ const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {!isAdmin && (
+      {!isAdmin && !nextIntervento && (
         <div className="bg-white rounded-xl shadow-card border border-gray-100 p-6 mt-8">
           <div className="flex items-center space-x-2 text-gray-500 mb-4">
             <AlertCircle className="w-5 h-5 text-brand-500" />
             <h2 className="text-lg font-semibold text-gray-900">Riepilogo Recente</h2>
           </div>
           <p className="text-gray-500 text-sm">Nessuna attività recente da mostrare. Configura gli interventi dal calendario.</p>
+        </div>
+      )}
+
+      {/* ── Prossimo Intervento ── */}
+      {nextIntervento && (
+        <div className="bg-white rounded-xl shadow-card border border-brand-100 p-6 relative overflow-hidden group mt-8">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+          <div className="flex items-center space-x-2 text-brand-600 mb-4 relative z-10">
+            <Calendar className="w-5 h-5" />
+            <h2 className="text-lg font-bold text-gray-900 tracking-tight">Prossimo Intervento</h2>
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div>
+              <p className="text-2xl font-black text-brand-700 capitalize mb-1">
+                {format(parseISO(nextIntervento.data), 'EEEE d MMMM yyyy', { locale: itLocale })}
+              </p>
+              <p className="text-gray-600 font-medium flex items-center gap-2">
+                <Users className="w-4 h-4 text-gray-400" />
+                {nextIntervento.clienti ? `${nextIntervento.clienti.cognome} ${nextIntervento.clienti.nome}` : nextIntervento.cliente_snapshot || 'Intervento Generico'}
+              </p>
+              {nextIntervento.note && (
+                <p className="text-sm text-gray-500 mt-2 bg-gray-50 p-3 rounded-lg border border-gray-100 line-clamp-2">
+                  {nextIntervento.note}
+                </p>
+              )}
+            </div>
+            <a 
+              href="/calendario" 
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-50 text-brand-700 hover:bg-brand-100 hover:text-brand-800 rounded-xl font-bold transition-colors shrink-0"
+            >
+              Vedi Calendario
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
         </div>
       )}
     </div>
