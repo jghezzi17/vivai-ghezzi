@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { format, parseISO } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import {
-  Plus, Search, Filter, Euro, User, Calendar,
+  Plus, Search, Filter, User, Calendar,
   ChevronRight, RefreshCw, FileText, Trash2
 } from 'lucide-react';
 import InterventoModal from '../components/InterventoModal';

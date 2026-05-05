@@ -6,7 +6,7 @@ import {
 } from 'date-fns';
 import { it as itLocale } from 'date-fns/locale';
 import { supabase } from '../lib/supabase';
-import { Plus, Calendar as CalendarIcon, User, CheckCircle2, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Plus, User, CheckCircle2, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import InterventoModal from '../components/InterventoModal';
 import InterventoDetailModal from '../components/InterventoDetailModal';
 
@@ -130,7 +130,7 @@ const CalendarioPage: React.FC = () => {
           
           {/* Grid Cells: Auto-sizing */}
           <div className="grid grid-cols-7 flex-1 min-h-[400px] lg:min-h-0 border-l border-gray-100">
-            {monthDays.map((date, idx) => {
+            {monthDays.map((date) => {
                const isSelected = isSameDay(date, selectedDate);
                const isTodayDate = isSameDay(date, today);
                const isCurrentMonth = isSameMonth(date, currentMonth);

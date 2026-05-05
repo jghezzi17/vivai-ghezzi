@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, Users, Package, UserCog, ClipboardList } from 'lucide-react';
+import { Home, Calendar, Users, UserCog, ClipboardList } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const MobileNav: React.FC = () => {

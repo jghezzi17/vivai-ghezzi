@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { UserRole } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Shield, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Shield, ShieldAlert } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 interface Utente {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Users, Package, Calendar, Settings, AlertCircle, TrendingUp, BarChart3, Euro, Clock, Trophy } from 'lucide-react';
+import { Users, Package, Calendar, AlertCircle, TrendingUp, BarChart3, Euro, Clock, Trophy } from 'lucide-react';
 import { format, subDays, subMonths, subYears } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
