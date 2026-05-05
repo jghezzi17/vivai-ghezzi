@@ -1,16 +1,4 @@
--- ==========================================
--- SCRIPT DI RESET TOTALE DEL DATABASE
--- ==========================================
 
--- 0. PULIZIA TOTALE (Elimina tutto se esiste già)
-drop trigger if exists on_auth_user_created on auth.users;
-drop function if exists public.handle_new_user() cascade;
-drop table if exists public.intervento_articoli cascade;
-drop table if exists public.intervento_operai cascade;
-drop table if exists public.interventi cascade;
-drop table if exists public.articoli cascade;
-drop table if exists public.clienti cascade;
-drop table if exists public.usersvivai cascade;
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
@@ -105,13 +93,7 @@ create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.usersvivai (id, email, nome, cognome, ruolo)
-  values (
-    new.id, 
-    new.email, 
-    new.raw_user_meta_data->>'nome', 
-    new.raw_user_meta_data->>'cognome', 
-    coalesce(new.raw_user_meta_data->>'ruolo', 'operaio')
-  );
+  values (new.id, new.email, '', '', 'operaio');
   return new;
 end;
 $$ language plpgsql security definer;

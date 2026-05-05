@@ -15,7 +15,6 @@ const MobileNav: React.FC = () => {
   if (isAdmin) {
     navItems.push(
       { name: 'Clienti', path: '/clienti', icon: Users },
-      { name: 'Articoli', path: '/articoli', icon: Package },
       { name: 'Utenti', path: '/utenti', icon: UserCog }
     );
   }

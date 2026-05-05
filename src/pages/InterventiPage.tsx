@@ -242,8 +242,8 @@ const InterventiPage: React.FC = () => {
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-3">
                           <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-brand-500 transition" />
-                          <button 
-                            onClick={(e) => handleDelete(e, int.id)} 
+                          <button
+                            onClick={(e) => handleDelete(e, int.id)}
                             className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                             title="Elimina intervento"
                           >
@@ -293,8 +293,8 @@ const InterventiPage: React.FC = () => {
                   </div>
                   <div className="shrink-0 flex items-center gap-2">
                     <span className="font-black text-green-700 text-sm">€{Number(int.costo_totale || 0).toFixed(0)}</span>
-                    <button 
-                      onClick={(e) => handleDelete(e, int.id)} 
+                    <button
+                      onClick={(e) => handleDelete(e, int.id)}
                       className="p-1.5 ml-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                     >
                       <Trash2 className="w-4 h-4" />

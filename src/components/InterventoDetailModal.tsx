@@ -327,36 +327,36 @@ const InterventoDetailModal: React.FC<InterventoDetailModalProps> = ({
                     <div className="info-item"><label>Data</label><p>{intervento.data ? format(parseISO(intervento.data), 'd MMMM yyyy', { locale: itLocale }) : '-'}</p></div>
                     {intervento.clienti?.email && <div className="info-item"><label>Email</label><p>{intervento.clienti.email}</p></div>}
                     {intervento.clienti?.telefono && <div className="info-item"><label>Telefono</label><p>{intervento.clienti.telefono}</p></div>}
-                    {intervento.clienti?.indirizzo && <div className="info-item" style={{gridColumn:'span 2'}}><label>Indirizzo</label><p>{intervento.clienti.indirizzo}</p></div>}
+                    {intervento.clienti?.indirizzo && <div className="info-item" style={{ gridColumn: 'span 2' }}><label>Indirizzo</label><p>{intervento.clienti.indirizzo}</p></div>}
                   </div>
                 </div>
                 {intervento.intervento_operai?.length > 0 && (
                   <div className="section">
                     <div className="section-title">Squadra</div>
                     <table><thead><tr><th>Operaio</th><th>Ruolo</th><th>Inizio</th><th>Fine</th><th>Pausa</th><th>Ore</th></tr></thead>
-                    <tbody>{intervento.intervento_operai.map((op: any) => (
-                      <tr key={op.id}>
-                        <td>{op.usersvivai?.nome ? `${op.usersvivai.nome} ${op.usersvivai.cognome}` : op.usersvivai?.email}</td>
-                        <td style={{textTransform:'capitalize'}}>{op.usersvivai?.ruolo}</td>
-                        <td>{op.ora_inizio}</td><td>{op.ora_fine}</td>
-                        <td>{op.pausa_minuti}min</td>
-                        <td>{calculateWorkerHours(op).toFixed(1)}h</td>
-                      </tr>
-                    ))}</tbody></table>
+                      <tbody>{intervento.intervento_operai.map((op: any) => (
+                        <tr key={op.id}>
+                          <td>{op.usersvivai?.nome ? `${op.usersvivai.nome} ${op.usersvivai.cognome}` : op.usersvivai?.email}</td>
+                          <td style={{ textTransform: 'capitalize' }}>{op.usersvivai?.ruolo}</td>
+                          <td>{op.ora_inizio}</td><td>{op.ora_fine}</td>
+                          <td>{op.pausa_minuti}min</td>
+                          <td>{calculateWorkerHours(op).toFixed(1)}h</td>
+                        </tr>
+                      ))}</tbody></table>
                   </div>
                 )}
                 {intervento.intervento_articoli?.length > 0 && (
                   <div className="section">
                     <div className="section-title">Materiali e Macchinari</div>
                     <table><thead><tr><th>Articolo</th><th>Tipo</th><th>Qtà</th><th>Unità</th><th>Costo</th></tr></thead>
-                    <tbody>{intervento.intervento_articoli.map((art: any) => (
-                      <tr key={art.id}>
-                        <td>{art.articoli?.nome}</td>
-                        <td style={{textTransform:'capitalize'}}>{art.articoli?.tipo}</td>
-                        <td>{art.quantita_usata}</td><td>{art.articoli?.unita_misura}</td>
-                        <td>€{(Number(art.articoli?.costo || 0) * (1 + Number(art.articoli?.aliquota_iva || 0)/100) * Number(art.quantita_usata)).toFixed(2)}</td>
-                      </tr>
-                    ))}</tbody></table>
+                      <tbody>{intervento.intervento_articoli.map((art: any) => (
+                        <tr key={art.id}>
+                          <td>{art.articoli?.nome}</td>
+                          <td style={{ textTransform: 'capitalize' }}>{art.articoli?.tipo}</td>
+                          <td>{art.quantita_usata}</td><td>{art.articoli?.unita_misura}</td>
+                          <td>€{(Number(art.articoli?.costo || 0) * (1 + Number(art.articoli?.aliquota_iva || 0) / 100) * Number(art.quantita_usata)).toFixed(2)}</td>
+                        </tr>
+                      ))}</tbody></table>
                   </div>
                 )}
                 {intervento.note && <div className="section"><div className="section-title">Note</div><div className="note-box">{intervento.note}</div></div>}
@@ -538,7 +538,7 @@ const InterventoDetailModal: React.FC<InterventoDetailModalProps> = ({
                                 className="w-20 p-2 text-sm outline-none" />
                               <span className="px-2 text-xs text-gray-400 bg-gray-50 border-l">{dbArt?.unita_misura || 'qty'}</span>
                             </div>
-                            {dbArt && <span className="text-xs text-orange-600 font-semibold whitespace-nowrap">€{(Number(dbArt.costo) * (1 + Number(dbArt.aliquota_iva)/100) * Number(art.quantita_usata)).toFixed(2)}</span>}
+                            {dbArt && <span className="text-xs text-orange-600 font-semibold whitespace-nowrap">€{(Number(dbArt.costo) * (1 + Number(dbArt.aliquota_iva) / 100) * Number(art.quantita_usata)).toFixed(2)}</span>}
                             <button type="button" onClick={() => setEditArticoli(editArticoli.filter((_, i) => i !== idx))}
                               className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition">
                               <X className="w-4 h-4" />
@@ -566,7 +566,7 @@ const InterventoDetailModal: React.FC<InterventoDetailModalProps> = ({
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-gray-800 text-sm">{art.quantita_usata} {art.articoli?.unita_misura}</p>
-                          <p className="text-xs text-orange-600 font-semibold">€{(Number(art.articoli?.costo || 0) * (1 + Number(art.articoli?.aliquota_iva || 0)/100) * Number(art.quantita_usata)).toFixed(2)}</p>
+                          <p className="text-xs text-orange-600 font-semibold">€{(Number(art.articoli?.costo || 0) * (1 + Number(art.articoli?.aliquota_iva || 0) / 100) * Number(art.quantita_usata)).toFixed(2)}</p>
                         </div>
                       </div>
                     ))}

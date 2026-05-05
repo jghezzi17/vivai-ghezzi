@@ -39,13 +39,13 @@ const ClientiPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [importing, setImporting] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
+
   const initialFormState: Partial<Cliente> = {
     nome: '', cognome: '', codice_fiscale: '', partita_iva: '', email: '', telefono: '', cellulare: '', indirizzo: '',
     cap: '', citta: '', provincia: '', nazione: '', pec: '', codice_destinatario: '', referente: '', extra: '',
@@ -120,7 +120,7 @@ const ClientiPage: React.FC = () => {
 
         const nome = getVal(['Nome']);
         const cognome = getVal(['Denominazione', 'Cognome', 'Ragione Sociale']);
-        
+
         let finalCognome = cognome;
         if (!finalCognome && nome) {
           finalCognome = nome; // fallback se c'è solo un nome
@@ -143,7 +143,7 @@ const ClientiPage: React.FC = () => {
           codice_destinatario: getVal(['Cod. destinatario Fatt. elettr.', 'Codice Destinatario', 'SDI']),
           referente: getVal(['Referente']),
           extra: `Da import: ${file.name}`,
-          
+
           cod_cliente: getVal(['Cod.', 'Codice Cliente', 'Codice']),
           regione: getVal(['Regione']),
           fax: getVal(['Fax']),
@@ -189,7 +189,7 @@ const ClientiPage: React.FC = () => {
     }
   };
 
-  const filteredClienti = clienti.filter(c => 
+  const filteredClienti = clienti.filter(c =>
     `${c.nome || ''} ${c.cognome}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.codice_fiscale?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -208,7 +208,7 @@ const ClientiPage: React.FC = () => {
             style={{ display: 'none' }}
             accept=".csv, .ods, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, application/vnd.oasis.opendocument.spreadsheet"
           />
-          <button 
+          <button
             onClick={triggerFileUpload}
             disabled={importing}
             className="flex items-center space-x-2 bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-200 transition disabled:opacity-50"
@@ -217,7 +217,7 @@ const ClientiPage: React.FC = () => {
             <span>{importing ? "Importazione..." : "Importa File"}</span>
           </button>
 
-          <button 
+          <button
             onClick={() => openModal()}
             className="flex items-center space-x-2 bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition"
           >
@@ -231,7 +231,7 @@ const ClientiPage: React.FC = () => {
         <div className="p-4 border-b border-gray-100">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input 
+            <input
               type="text"
               placeholder="Cerca cliente per nome, email o codice..."
               value={searchTerm}
@@ -326,42 +326,42 @@ const ClientiPage: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900">{editingId ? 'Modifica Cliente' : 'Nuovo Cliente'}</h2>
               <button type="button" onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-semibold leading-none">&times;</button>
             </div>
-            
+
             <form onSubmit={handleSave} className="p-6">
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Colonna Sinistra */}
                 <div className="space-y-6">
-                  
+
                   {/* Blocco Dati Anagrafici */}
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3 border-b pb-2">Dati Anagrafici</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Codice Cliente</label>
-                        <input type="text" value={formData.cod_cliente || ''} onChange={e => setFormData({...formData, cod_cliente: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="Es. 0001" />
+                        <input type="text" value={formData.cod_cliente || ''} onChange={e => setFormData({ ...formData, cod_cliente: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="Es. 0001" />
                       </div>
                       <div>
-                         {/* Spacer per layout in desktop */}
+                        {/* Spacer per layout in desktop */}
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Ragione Sociale / Cognome *</label>
-                        <input required type="text" value={formData.cognome || ''} onChange={e => setFormData({...formData, cognome: e.target.value})} className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Es. Mario Rossi o Azienda Srl" />
+                        <input required type="text" value={formData.cognome || ''} onChange={e => setFormData({ ...formData, cognome: e.target.value })} className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Es. Mario Rossi o Azienda Srl" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome (Opzionale)</label>
-                        <input type="text" value={formData.nome || ''} onChange={e => setFormData({...formData, nome: e.target.value})} className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
+                        <input type="text" value={formData.nome || ''} onChange={e => setFormData({ ...formData, nome: e.target.value })} className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
                       </div>
                       <div>
-                         {/* Spacer per layout in desktop */}
+                        {/* Spacer per layout in desktop */}
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Codice Fiscale</label>
-                        <input type="text" value={formData.codice_fiscale || ''} onChange={e => setFormData({...formData, codice_fiscale: e.target.value})} className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none uppercase" />
+                        <input type="text" value={formData.codice_fiscale || ''} onChange={e => setFormData({ ...formData, codice_fiscale: e.target.value })} className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none uppercase" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Partita IVA</label>
-                        <input type="text" value={formData.partita_iva || ''} onChange={e => setFormData({...formData, partita_iva: e.target.value})} className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
+                        <input type="text" value={formData.partita_iva || ''} onChange={e => setFormData({ ...formData, partita_iva: e.target.value })} className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
                       </div>
                     </div>
                   </div>
@@ -372,31 +372,31 @@ const ClientiPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
-                        <input type="email" value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="email" value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">PEC</label>
-                        <input type="email" value={formData.pec || ''} onChange={e => setFormData({...formData, pec: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="email" value={formData.pec || ''} onChange={e => setFormData({ ...formData, pec: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Telefono Fisso</label>
-                        <input type="tel" value={formData.telefono || ''} onChange={e => setFormData({...formData, telefono: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="tel" value={formData.telefono || ''} onChange={e => setFormData({ ...formData, telefono: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cellulare</label>
-                        <input type="tel" value={formData.cellulare || ''} onChange={e => setFormData({...formData, cellulare: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="tel" value={formData.cellulare || ''} onChange={e => setFormData({ ...formData, cellulare: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fax</label>
-                        <input type="tel" value={formData.fax || ''} onChange={e => setFormData({...formData, fax: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="tel" value={formData.fax || ''} onChange={e => setFormData({ ...formData, fax: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Referente</label>
-                        <input type="text" value={formData.referente || ''} onChange={e => setFormData({...formData, referente: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.referente || ''} onChange={e => setFormData({ ...formData, referente: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Codice Destinatario (SDI)</label>
-                        <input type="text" value={formData.codice_destinatario || ''} onChange={e => setFormData({...formData, codice_destinatario: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.codice_destinatario || ''} onChange={e => setFormData({ ...formData, codice_destinatario: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                     </div>
                   </div>
@@ -404,36 +404,36 @@ const ClientiPage: React.FC = () => {
 
                 {/* Colonna Destra */}
                 <div className="space-y-6">
-                  
+
                   {/* Blocco Sede e Indirizzo */}
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3 border-b pb-2">Sede e Indirizzo</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Indirizzo / Via</label>
-                        <input type="text" value={formData.indirizzo || ''} onChange={e => setFormData({...formData, indirizzo: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.indirizzo || ''} onChange={e => setFormData({ ...formData, indirizzo: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Città</label>
-                        <input type="text" value={formData.citta || ''} onChange={e => setFormData({...formData, citta: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.citta || ''} onChange={e => setFormData({ ...formData, citta: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="block text-xs font-bold text-gray-500 uppercase mb-1">CAP</label>
-                          <input type="text" value={formData.cap || ''} onChange={e => setFormData({...formData, cap: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                          <input type="text" value={formData.cap || ''} onChange={e => setFormData({ ...formData, cap: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Provincia</label>
-                          <input type="text" value={formData.provincia || ''} onChange={e => setFormData({...formData, provincia: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                          <input type="text" value={formData.provincia || ''} onChange={e => setFormData({ ...formData, provincia: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                         </div>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Regione</label>
-                        <input type="text" value={formData.regione || ''} onChange={e => setFormData({...formData, regione: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.regione || ''} onChange={e => setFormData({ ...formData, regione: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nazione</label>
-                        <input type="text" value={formData.nazione || ''} onChange={e => setFormData({...formData, nazione: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.nazione || ''} onChange={e => setFormData({ ...formData, nazione: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                     </div>
                   </div>
@@ -444,32 +444,32 @@ const ClientiPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Pagamento</label>
-                        <input type="text" value={formData.pagamento || ''} onChange={e => setFormData({...formData, pagamento: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.pagamento || ''} onChange={e => setFormData({ ...formData, pagamento: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Agente</label>
-                        <input type="text" value={formData.agente || ''} onChange={e => setFormData({...formData, agente: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.agente || ''} onChange={e => setFormData({ ...formData, agente: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Banca Appoggio</label>
-                        <input type="text" value={formData.banca || ''} onChange={e => setFormData({...formData, banca: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.banca || ''} onChange={e => setFormData({ ...formData, banca: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nostra Banca (Ns Banca)</label>
-                        <input type="text" value={formData.ns_banca || ''} onChange={e => setFormData({...formData, ns_banca: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                        <input type="text" value={formData.ns_banca || ''} onChange={e => setFormData({ ...formData, ns_banca: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                       </div>
                       <div className="grid grid-cols-3 gap-2 md:col-span-2">
                         <div>
                           <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Listino</label>
-                          <input type="text" value={formData.listino || ''} onChange={e => setFormData({...formData, listino: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                          <input type="text" value={formData.listino || ''} onChange={e => setFormData({ ...formData, listino: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Sconti</label>
-                          <input type="text" value={formData.sconti || ''} onChange={e => setFormData({...formData, sconti: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                          <input type="text" value={formData.sconti || ''} onChange={e => setFormData({ ...formData, sconti: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Fido</label>
-                          <input type="text" value={formData.fido || ''} onChange={e => setFormData({...formData, fido: e.target.value})} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
+                          <input type="text" value={formData.fido || ''} onChange={e => setFormData({ ...formData, fido: e.target.value })} className="w-full p-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-brand-500" />
                         </div>
                       </div>
                     </div>
@@ -478,9 +478,9 @@ const ClientiPage: React.FC = () => {
                   {/* Note Aggiuntive */}
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Note Aggiuntive</label>
-                    <textarea rows={2} value={formData.note || ''} onChange={e => setFormData({...formData, note: e.target.value})} className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 text-sm" placeholder="Eventuali note..."></textarea>
+                    <textarea rows={2} value={formData.note || ''} onChange={e => setFormData({ ...formData, note: e.target.value })} className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 text-sm" placeholder="Eventuali note..."></textarea>
                   </div>
-                  
+
                 </div>
               </div>
 

@@ -17,7 +17,7 @@ const ArticoliPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
-  
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -77,7 +77,7 @@ const ArticoliPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-900">Articoli in Magazzino</h1>
-        <button 
+        <button
           onClick={() => openModal()}
           className="flex items-center space-x-2 bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition"
         >
@@ -90,7 +90,7 @@ const ArticoliPage: React.FC = () => {
         <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input 
+            <input
               type="text"
               placeholder="Cerca articolo..."
               value={searchTerm}
@@ -99,8 +99,8 @@ const ArticoliPage: React.FC = () => {
             />
           </div>
           <div className="w-full sm:w-48 relative">
-             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-             <select
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+            <select
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white"
@@ -135,9 +135,8 @@ const ArticoliPage: React.FC = () => {
                     <tr key={art.id} className="border-b hover:bg-gray-50">
                       <td className="px-6 py-4 font-medium text-gray-900">{art.nome}</td>
                       <td className="px-6 py-4 capitalize">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          art.tipo === 'macchinario' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${art.tipo === 'macchinario' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
                           {art.tipo}
                         </span>
                       </td>
@@ -171,9 +170,8 @@ const ArticoliPage: React.FC = () => {
                 <div key={art.id} className="bg-white border text-sm border-gray-200 p-4 rounded-lg shadow-sm">
                   <div className="flex justify-between items-start mb-2">
                     <div className="font-bold text-gray-900 text-base">{art.nome}</div>
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider ${
-                      art.tipo === 'macchinario' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider ${art.tipo === 'macchinario' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
                       {art.tipo}
                     </span>
                   </div>
@@ -211,44 +209,44 @@ const ArticoliPage: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900">{editingId ? 'Modifica Articolo' : 'Nuovo Articolo'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-semibold leading-none">&times;</button>
             </div>
-            
+
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
-                <input required type="text" value={formData.nome || ''} onChange={e => setFormData({...formData, nome: e.target.value})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
+                <input required type="text" value={formData.nome || ''} onChange={e => setFormData({ ...formData, nome: e.target.value })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
-                  <select required value={formData.tipo || 'materiale'} onChange={e => setFormData({...formData, tipo: e.target.value as any})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 bg-white">
+                  <select required value={formData.tipo || 'materiale'} onChange={e => setFormData({ ...formData, tipo: e.target.value as any })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 bg-white">
                     <option value="materiale">Materiale</option>
                     <option value="macchinario">Macchinario</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Unità di Misura *</label>
-                  <select required value={formData.unita_misura || 'pz'} onChange={e => setFormData({...formData, unita_misura: e.target.value as any})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 bg-white">
+                  <select required value={formData.unita_misura || 'pz'} onChange={e => setFormData({ ...formData, unita_misura: e.target.value as any })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 bg-white">
                     <option value="pz">Pezzi (pz)</option>
                     <option value="kg">Chilogrammi (kg)</option>
                     <option value="ore">Ore (h)</option>
                   </select>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quantità in giacenza *</label>
-                <input required type="number" step="0.01" value={formData.quantita || 0} onChange={e => setFormData({...formData, quantita: parseFloat(e.target.value)})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
+                <input required type="number" step="0.01" value={formData.quantita || 0} onChange={e => setFormData({ ...formData, quantita: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Costo Unitario (€) *</label>
-                  <input required type="number" step="0.01" value={formData.costo || 0} onChange={e => setFormData({...formData, costo: parseFloat(e.target.value)})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
+                  <input required type="number" step="0.01" value={formData.costo || 0} onChange={e => setFormData({ ...formData, costo: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Aliquota IVA (%) *</label>
-                  <input required type="number" value={formData.aliquota_iva || 22} onChange={e => setFormData({...formData, aliquota_iva: parseFloat(e.target.value)})} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
+                  <input required type="number" value={formData.aliquota_iva || 22} onChange={e => setFormData({ ...formData, aliquota_iva: parseFloat(e.target.value) })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
                 </div>
               </div>
 

@@ -11,7 +11,6 @@ const Sidebar: React.FC = () => {
     { name: 'Calendario', path: '/calendario', icon: Calendar },
     { name: 'Interventi', path: '/interventi', icon: ClipboardList },
     { name: 'Clienti', path: '/clienti', icon: Users },
-    { name: 'Articoli', path: '/articoli', icon: Package },
   ];
 
   if (isAdmin) {
