@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit2, Trash2, Search, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Upload, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useAuth } from '../contexts/AuthContext';
 
 export interface Cliente {
   id: string;
@@ -39,7 +40,9 @@ const ClientiPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [importing, setImporting] = useState(false);
+  const [pendingImportClients, setPendingImportClients] = useState<any[] | null>(null);
 
+  const { isAdmin } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Modal state
@@ -76,6 +79,89 @@ const ClientiPage: React.FC = () => {
     }
     setIsModalOpen(false);
     fetchClienti();
+  };
+
+  const executeImport = async (batchSize: number, clients: any[]) => {
+    setLoading(true);
+    setPendingImportClients(null);
+    try {
+      for (let i = 0; i < clients.length; i += batchSize) {
+        const batch = clients.slice(i, i + batchSize);
+        const { error } = await supabase.from('clienti').insert(batch);
+        if (error) {
+          console.error("Error inserting batch:", error);
+          alert("Errore durante l'inserimento. Controlla la console.");
+          return;
+        }
+      }
+      alert(`Importati ${clients.length} clienti con successo!`);
+      fetchClienti();
+    } finally {
+      setLoading(false);
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleImportOverwrite = async () => {
+    if (!pendingImportClients) return;
+    if (!isAdmin) {
+      alert("Solo gli amministratori possono sovrascrivere tutti i clienti.");
+      return;
+    }
+    const confirmation = window.prompt('ATTENZIONE: Stai per ELIMINARE TUTTI i clienti prima di importare. Digita "SOVRASCRIVI" per confermare:');
+    if (confirmation === 'SOVRASCRIVI') {
+      setLoading(true);
+      try {
+        await supabase.from('interventi').update({ cliente_id: null }).not('cliente_id', 'is', null);
+        await supabase.from('clienti').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await executeImport(500, pendingImportClients);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+        setImporting(false);
+      }
+    }
+  };
+
+  const handleImportAppend = async () => {
+    if (!pendingImportClients) return;
+    setLoading(true);
+    try {
+      // Ottieni clienti esistenti per controllare i duplicati
+      const { data: existingClients, error } = await supabase.from('clienti').select('nome, cognome, codice_fiscale, partita_iva');
+      if (error) throw error;
+
+      const newClientsToInsert = pendingImportClients.filter(newClient => {
+        return !existingClients.some(existing => {
+          if (newClient.partita_iva && existing.partita_iva && existing.partita_iva === newClient.partita_iva) return true;
+          if (newClient.codice_fiscale && existing.codice_fiscale && existing.codice_fiscale === newClient.codice_fiscale) return true;
+          const newFullName = `${newClient.nome || ''} ${newClient.cognome}`.trim().toLowerCase();
+          const existingFullName = `${existing.nome || ''} ${existing.cognome}`.trim().toLowerCase();
+          if (newFullName === existingFullName) return true;
+          
+          return false;
+        });
+      });
+
+      if (newClientsToInsert.length === 0) {
+        alert("Tutti i clienti nel file sono già presenti nel database. Nessun cliente aggiunto.");
+        setPendingImportClients(null);
+        setLoading(false);
+        setImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+
+      await executeImport(500, newClientsToInsert);
+    } catch (err) {
+      console.error(err);
+      alert("Errore durante il controllo dei duplicati.");
+      setLoading(false);
+      setPendingImportClients(null);
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -163,20 +249,7 @@ const ClientiPage: React.FC = () => {
         return;
       }
 
-      // Supabase consiglia batch di 1000 per insert.
-      const BATCH_SIZE = 500;
-      for (let i = 0; i < clientsToInsert.length; i += BATCH_SIZE) {
-        const batch = clientsToInsert.slice(i, i + BATCH_SIZE);
-        const { error } = await supabase.from('clienti').insert(batch);
-        if (error) {
-          console.error("Error inserting batch:", error);
-          alert("Errore durante l'inserimento. Controlla la console.");
-        }
-      }
-
-      alert(`Importati ${clientsToInsert.length} clienti con successo!`);
-      // Update data immediately
-      fetchClienti();
+      setPendingImportClients(clientsToInsert);
 
     } catch (err) {
       console.error(err);
@@ -493,6 +566,67 @@ const ClientiPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PER IMPORTAZIONE CLIENTI */}
+      {pendingImportClients && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Importazione Clienti</h2>
+            <p className="text-gray-600 mb-6">
+              Sono stati trovati <strong>{pendingImportClients.length}</strong> clienti validi nel file. Come vuoi procedere?
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleImportAppend}
+                className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-brand-100 hover:border-brand-500 hover:bg-brand-50 transition-all text-left group"
+              >
+                <div>
+                  <div className="font-bold text-gray-900 group-hover:text-brand-700">Aggiungi Nuovi</div>
+                  <div className="text-xs text-gray-500 mt-1">Salta i duplicati e aggiunge solo i nuovi clienti. Sicuro e raccomandato.</div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 group-hover:scale-110 transition-transform shrink-0 ml-3">
+                  <Plus className="w-4 h-4" />
+                </div>
+              </button>
+
+              {isAdmin && (
+                <button
+                  onClick={handleImportOverwrite}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-red-100 hover:border-red-500 hover:bg-red-50 transition-all text-left group"
+                >
+                  <div>
+                    <div className="font-bold text-gray-900 group-hover:text-red-700">Sovrascrivi Tutti</div>
+                    <div className="text-xs text-red-500 mt-1">Elimina tutti i clienti attuali e inserisce solo quelli del file.</div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform shrink-0 ml-3">
+                    <Trash2 className="w-4 h-4" />
+                  </div>
+                </button>
+              )}
+              
+              {!isAdmin && (
+                <div className="p-3 bg-gray-50 rounded-xl flex gap-2 items-start text-xs text-gray-500 border border-gray-100">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-gray-400 mt-0.5" />
+                  <span>L'opzione di sovrascrittura totale è riservata agli amministratori.</span>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => {
+                  setPendingImportClients(null);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+                className="px-4 py-2 text-sm font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              >
+                Annulla
+              </button>
+            </div>
           </div>
         </div>
       )}
